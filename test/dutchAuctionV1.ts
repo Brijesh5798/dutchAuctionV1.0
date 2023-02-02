@@ -25,14 +25,6 @@ describe("BasicDutchAuction", function () {
   }
 
   describe("Deployment", function () {
-    // it("Should set the right start block", async function () {
-    //   const { basic_dutch_auction, auctionStartBlock } = await loadFixture(deployBasicDutchAuction);
-    //   console.log(auctionStartBlock,"AUCTION START BLOCK IN TS FILE");
-    //   console.log(await basic_dutch_auction.auctionStartBlock(),"AUCTION START BLOCK IN SMART CONTRACT")
-    //   expect(await basic_dutch_auction.auctionStartBlock()).to.equal(auctionStartBlock);
-
-    // });
-
     it("Should set the right owner", async function () {
       const { basic_dutch_auction, owner, account1 } = await loadFixture(deployBasicDutchAuction);
       console.log(await owner.getBalance(),"balanceee");
@@ -62,26 +54,23 @@ describe("BasicDutchAuction", function () {
     });
 
   });
-  describe("Aucion", function () {
-    it("Buyer 1 will bid", async function () {
-      const { basic_dutch_auction, account1, account2, account3, account4 } = await loadFixture(deployBasicDutchAuction);
-      await basic_dutch_auction.connect(account1).bid({value: '100'});
-      await basic_dutch_auction.connect(account2).bid({value: '5000'});
-      expect(await (await basic_dutch_auction.bids(0)).bidder).to.equal(account1.address);
-      expect(await (await basic_dutch_auction.bids(0)).amount).to.equal('100');
-      expect(await (await basic_dutch_auction.bids(1)).bidder).to.equal(account2.address);
-      expect(await (await basic_dutch_auction.bids(1)).amount).to.equal('5000');
-      await basic_dutch_auction.connect(account3).bid({value: '50000'});
+  describe("Auction", function () {
+    it("Buyers will bid", async function () {
+      const { basic_dutch_auction,owner, account1, account2, account3, account4 } = await loadFixture(deployBasicDutchAuction);
+      const balance_before = await owner.getBalance();
+      const bid1 = await basic_dutch_auction.connect(account1).bid({value: '100'});
+      const receipt = await bid1.wait()
+      const gasSpent = receipt.gasUsed.mul(receipt.effectiveGasPrice)
+      expect(await account1.getBalance()).to.eq(ethers.utils.parseEther("10000").sub(gasSpent))
+      const bid2 =  await basic_dutch_auction.connect(account2).bid({value: '5000'});
+      const receipt2 = await bid2.wait()
+      const gasSpent2 = receipt2.gasUsed.mul(receipt2.effectiveGasPrice)
+      expect(await account2.getBalance()).to.eq(ethers.utils.parseEther("10000").sub(gasSpent2))
+      const bid3 = await basic_dutch_auction.connect(account3).bid({value: '50000'});
       await expect(basic_dutch_auction.connect(account4).bid({value: '1000'})).to.be.revertedWith(
         "auction is ended"
       );
+      expect (await owner.getBalance()).to.eq(balance_before.add(50000));
     });
-
-    // it("Buyer 2 will bid", async function () {
-    //     const { basic_dutch_auction, account2 } = await loadFixture(deployBasicDutchAuction);
-    //     await basic_dutch_auction.connect(account2).bid({value: ethers.utils.parseEther('5')});
-    //     expect(await (await basic_dutch_auction.bids(0)).bidder).to.equal(account2.address);
-    //     expect(await (await basic_dutch_auction.bids(0)).amount).to.equal(ethers.utils.parseEther('5'));
-    //   });
 });
 });

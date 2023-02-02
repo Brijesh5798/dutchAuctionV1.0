@@ -17,11 +17,6 @@ contract BasicDutchAuction {
     uint256 public initialPrice;
     uint256 public auctionEndBlock;
     address payable public owner;
-    struct bidStruct {
-        address bidder;
-        uint256 amount;
-    }
-    mapping (uint256 => bidStruct) public bids;
     bool private ended;
 
     modifier isAuctionValid() {
@@ -46,25 +41,13 @@ contract BasicDutchAuction {
         uint256 blockPassed = block.timestamp.sub(auctionStartBlock);
         uint256 currentPrice = initialPrice.sub(blockPassed.mul(offerPriceDecrement));
         if (msg.value >= currentPrice){
-            finalize();
+            owner.transfer(msg.value);
+            ended = true;
         }
         else {
-            bids[bidCount.current()] = bidStruct(msg.sender, msg.value);
-            bidCount.increment();
+            address payable bidder = payable(msg.sender);
+            bidder.transfer(msg.value);
         }
         return msg.sender;
-    }
-
-    function finalize() internal {
-        owner.transfer(msg.value);
-        ended = true;
-        refund();
-    }
-
-    function refund() internal {
-        for (uint256 i=0; i<=bidCount.current(); i++){
-            address payable bidder = payable (bids[i].bidder);
-            bidder.transfer(bids[i].amount);
-        }
     }
 }
