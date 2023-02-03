@@ -20,6 +20,7 @@ contract BasicDutchAuction {
     bool private ended;
 
     modifier isAuctionValid() {
+        require(msg.sender != owner, "owner can't bid");
         require(ended == false, "auction is ended");
         require(block.timestamp > auctionStartBlock, "auction is not started yet");
         require(block.timestamp < auctionEndBlock, "auction is ended");

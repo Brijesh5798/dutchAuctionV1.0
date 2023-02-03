@@ -54,7 +54,7 @@ describe("BasicDutchAuction", function () {
     });
 
   });
-  describe("Auction", function () {
+describe("Auction", function () {
     it("Buyers will bid", async function () {
       const { basic_dutch_auction,owner, account1, account2, account3, account4 } = await loadFixture(deployBasicDutchAuction);
       const balance_before = await owner.getBalance();
@@ -72,5 +72,12 @@ describe("BasicDutchAuction", function () {
       );
       expect (await owner.getBalance()).to.eq(balance_before.add(50000));
     });
+
+    it("Owner can not bid", async function () {
+        const { basic_dutch_auction,owner} = await loadFixture(deployBasicDutchAuction);
+        await expect(basic_dutch_auction.connect(owner).bid({value: '1000'})).to.be.revertedWith(
+          "owner can't bid"
+        );
+      });
 });
 });
