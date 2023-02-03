@@ -55,23 +55,31 @@ describe("BasicDutchAuction", function () {
 
   });
 describe("Auction", function () {
-    it("Buyers will bid", async function () {
+    it("Buyers will bid and bid will be refunded", async function () {
       const { basic_dutch_auction,owner, account1, account2, account3, account4 } = await loadFixture(deployBasicDutchAuction);
-      const balance_before = await owner.getBalance();
       const bid1 = await basic_dutch_auction.connect(account1).bid({value: '100'});
-      const receipt = await bid1.wait()
-      const gasSpent = receipt.gasUsed.mul(receipt.effectiveGasPrice)
-      expect(await account1.getBalance()).to.eq(ethers.utils.parseEther("10000").sub(gasSpent))
-      const bid2 =  await basic_dutch_auction.connect(account2).bid({value: '5000'});
-      const receipt2 = await bid2.wait()
-      const gasSpent2 = receipt2.gasUsed.mul(receipt2.effectiveGasPrice)
-      expect(await account2.getBalance()).to.eq(ethers.utils.parseEther("10000").sub(gasSpent2))
-      const bid3 = await basic_dutch_auction.connect(account3).bid({value: '50000'});
-      await expect(basic_dutch_auction.connect(account4).bid({value: '1000'})).to.be.revertedWith(
-        "auction is ended"
-      );
-      expect (await owner.getBalance()).to.eq(balance_before.add(50000));
+      const receipt1 = await bid1.wait()
+      const gasSpent1 = receipt1.gasUsed.mul(receipt1.effectiveGasPrice)
+      expect(await account1.getBalance()).to.eq(ethers.utils.parseEther("10000").sub(gasSpent1))
     });
+
+    it("Buyers will bid and bid will be accepted", async function () {
+        const { basic_dutch_auction,owner, account1, account2, account3, account4 } = await loadFixture(deployBasicDutchAuction);
+        const balance_before = await owner.getBalance();
+        const bid3 = await basic_dutch_auction.connect(account3).bid({value: '50000'});
+        const receipt3 = await bid3.wait()
+        const gasSpent3 = receipt3.gasUsed.mul(receipt3.effectiveGasPrice)
+        expect(await account3.getBalance()).to.eq(ethers.utils.parseEther("10000").sub(gasSpent3.add('50000')))
+        expect (await owner.getBalance()).to.eq(balance_before.add(50000));
+      });
+
+      it("Buyers can not bid after auction ended", async function () {
+        const { basic_dutch_auction,owner, account1, account2, account3, account4 } = await loadFixture(deployBasicDutchAuction);
+        const bid3 = await basic_dutch_auction.connect(account3).bid({value: '50000'});
+        await expect(basic_dutch_auction.connect(account4).bid({value: '1000'})).to.be.revertedWith(
+          "auction is ended"
+        );
+      });
 
     it("Owner can not bid", async function () {
         const { basic_dutch_auction,owner} = await loadFixture(deployBasicDutchAuction);
